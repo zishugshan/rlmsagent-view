@@ -1,5 +1,5 @@
 'use client'
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect} from "react";
 
 // ---- Tiny XML → JS tree helpers -------------------------------------------
 
@@ -157,63 +157,57 @@ const ArrayGroup: React.FC<{ tag: string; items: XmlNode[]; depth: number }> = (
   );
 };
 
-const sampleXml = `<?xml version="1.0"?>\n<rlmsinfo>\n  <rlmsreginfo>\n    <PrivateID>404535130000840</PrivateID>\n    <hssName>NA</hssName>\n  </rlmsreginfo>\n  <rlmsreginfo>\n    <PrivateID>404535130000841</PrivateID>\n    <hssName>NA</hssName>\n  </rlmsreginfo>\n</rlmsinfo>`;
 
-function Controls({ onLoad }: { onLoad: (xml: string) => void }) {
-  const [text, setText] = useState("");
-
-  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      onLoad(String(reader.result || ""));
-    };
-    reader.readAsText(f);
-  };
-
-  return (
-    <div className="flex items-center gap-2 p-3 border-b bg-white sticky top-0 z-10">
-      <button className="px-3 py-1.5 rounded bg-black text-white text-sm" onClick={() => onLoad(text || sampleXml)}>Parse XML</button>
-      <input type="file" accept=".xml,.txt" onChange={onPickFile} className="text-sm" />
-      <button className="px-3 py-1.5 rounded border text-sm" onClick={() => onLoad(sampleXml)}>Load demo</button>
-      <textarea
-        placeholder="Paste XML here…"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="ml-2 flex-1 h-20 p-2 border rounded font-mono text-xs"
-      />
-    </div>
-  );
-}
+const XML_URL = '/user-data.xml'; // fixed path in /public
 
 export default function XmlTreeViewerApp() {
-  const [xmlTree, setXmlTree] = useState<XmlNode | { error: string } | null>(null);
+  const [xmlTree, setXmlTree] =
+    useState<XmlNode | { error: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(XML_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const xml = await res.text();
+        const tree = parseXmlToTree(xml);
+        if (!cancelled) setXmlTree(tree);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!cancelled) setXmlTree({ error: `Failed to load XML: ${msg}` });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="w-full h-full bg-gray-100 text-gray-900">
-      {/* Header */}
-      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">XML Tree</div>
+      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">
+        XML Tree
+      </div>
 
-      <Controls onLoad={(xml) => setXmlTree(parseXmlToTree(xml))} />
+      {/* remove the Controls since we don't upload anymore */}
 
       <div className="p-2">
         {!xmlTree && (
-          <div className="m-4 text-gray-600">Paste XML, load a file, or click <em>Load demo</em> to see the tree.</div>
+          <div className="m-4 text-gray-600">Loading XML from {XML_URL}…</div>
         )}
-        {xmlTree && "error" in xmlTree && (
-          <div className="m-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">{xmlTree.error}</div>
+        {xmlTree && 'error' in xmlTree && (
+          <div className="m-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {xmlTree.error}
+          </div>
         )}
-        {xmlTree && !("error" in xmlTree) && (
+        {xmlTree && !('error' in xmlTree) && (
           <div className="bg-white rounded-lg shadow border overflow-hidden">
             <XmlTreeNode node={xmlTree as XmlNode} />
           </div>
         )}
       </div>
 
-      {/* Footer hint */}
-      <div className="p-3 text-xs text-gray-500">Tip: repeated tags are grouped as arrays, e.g., <code>rlmsreginfo [198]</code>. Click to expand.</div>
+      <div className="p-3 text-xs text-gray-500">
+        Tip: repeated tags are grouped as arrays, e.g., <code>rlmsreginfo [198]</code>.
+      </div>
     </div>
   );
 }
-
