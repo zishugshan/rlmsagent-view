@@ -158,7 +158,7 @@ const ArrayGroup: React.FC<{ tag: string; items: XmlNode[]; depth: number }> = (
 };
 
 
-const XML_URL = '/user-data.xml'; // fixed path in /public
+const XML_URL = '/api/xml'; // fixed path in /public
 
 export default function XmlTreeViewerApp() {
   const [xmlTree, setXmlTree] =
