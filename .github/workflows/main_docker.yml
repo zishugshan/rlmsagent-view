@@ -30,7 +30,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/rlmsagent-view
+          images: docker.io/${{ secrets.DOCKER_USERNAME }}/rlmsagent-view
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=short
