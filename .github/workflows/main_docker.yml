@@ -20,7 +20,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build -t zissu/rlmsagent_view:d1.0 .
+        run: docker build -t zissu/rlmsagent_view:prod .
 
       - name: Push Docker Image
-        run: docker push zissu/rlmsagent_view:d1.0
+        run: docker push zissu/rlmsagent_view:prod
