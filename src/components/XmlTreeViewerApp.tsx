@@ -157,46 +157,55 @@ const ArrayGroup: React.FC<{ tag: string; items: XmlNode[]; depth: number }> = (
   );
 };
 
-
-const XML_URL = '/api/xml'; // fixed path in /public
+const XML_URL = '/api/xml';
+const COUNT_URL = '/api/rlmsreginfo-count';
 
 export default function XmlTreeViewerApp() {
-  const [xmlTree, setXmlTree] =
-    useState<XmlNode | { error: string } | null>(null);
+  const [xmlTree, setXmlTree] = useState<XmlNode | { error: string } | null>(null);
+  const [reginfoCount, setReginfoCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
+      let xml: string | null = null;
+
+      // 1) fetch full XML (for the tree)
       try {
         const res = await fetch(XML_URL, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const xml = await res.text();
-        const tree = parseXmlToTree(xml);
-        if (!cancelled) setXmlTree(tree);
-      } catch (e: unknown) {
+        xml = await res.text();
+        if (!cancelled) setXmlTree(parseXmlToTree(xml));
+      } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (!cancelled) setXmlTree({ error: `Failed to load XML: ${msg}` });
       }
+
+      // 2) get server-side count (fast), fallback to client count if needed
+      try {
+        const r = await fetch(COUNT_URL, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const { count } = await r.json();
+        if (!cancelled) setReginfoCount(typeof count === 'number' ? count : 0);
+      } catch {
+        if (xml) {
+          const m = xml.match(/<\s*rlmsreginfo\b/gi);
+          if (!cancelled) setReginfoCount(m ? m.length : 0);
+        }
+      }
     })();
+
     return () => { cancelled = true; };
   }, []);
 
   return (
     <div className="w-full h-full bg-gray-100 text-gray-900">
-      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">
-        XML Tree
-      </div>
-
-      {/* remove the Controls since we don't upload anymore */}
+      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">XML Tree</div>
 
       <div className="p-2">
-        {!xmlTree && (
-          <div className="m-4 text-gray-600">Loading XML from {XML_URL}…</div>
-        )}
+        {!xmlTree && <div className="m-4 text-gray-600">Loading XML…</div>}
         {xmlTree && 'error' in xmlTree && (
-          <div className="m-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-            {xmlTree.error}
-          </div>
+          <div className="m-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">{xmlTree.error}</div>
         )}
         {xmlTree && !('error' in xmlTree) && (
           <div className="bg-white rounded-lg shadow border overflow-hidden">
@@ -205,8 +214,11 @@ export default function XmlTreeViewerApp() {
         )}
       </div>
 
+      {/* Footer hint with real count */}
       <div className="p-3 text-xs text-gray-500">
-        Tip: repeated tags are grouped as arrays, e.g., <code>rlmsreginfo [198]</code>.
+        {reginfoCount === null
+          ? 'Counting rlmsreginfo…'
+          : <>rlmsreginfo count: <code>{reginfoCount}</code></>}
       </div>
     </div>
   );

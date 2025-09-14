@@ -163,11 +163,15 @@ const XML_URL = '/api/xml'; // fixed path in /public
 export default function XmlTreeViewerApp() {
   const [xmlTree, setXmlTree] =
     useState<XmlNode | { error: string } | null>(null);
+  const [reginfoCount, setReginfoCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        const r = await fetch('/api/xml?count=1', { cache: 'no-store' });
+        const { count } = await r.json();
+        setReginfoCount(count);
         const res = await fetch(XML_URL, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const xml = await res.text();
@@ -206,7 +210,9 @@ export default function XmlTreeViewerApp() {
       </div>
 
       <div className="p-3 text-xs text-gray-500">
-        Tip: repeated tags are grouped as arrays, e.g., <code>rlmsreginfo [198]</code>.
+        {reginfoCount === null
+          ? 'Counting rlmsreginfo…'
+          : <>rlmsreginfo count: <code>{reginfoCount}</code></>}
       </div>
     </div>
   );
