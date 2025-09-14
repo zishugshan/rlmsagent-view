@@ -1,12 +1,14 @@
-docker build -t rlmsagent-view:prod .
+docker build -t rlmsagent_view:d1.0 .
 
-docker save -o rlms-view.tar image-id
+docker save -o rlmsagent_view.tar image-id
 
-sudo docker load -i rlmsagent-view.tar
+sudo docker load -i rlmsagent_view.tar
 sudo docker images
-sudo docker tag image-d rlmsagent-view:1.0.0
-sudo docker run --rm -e PORT=3002 -e HOSTNAME=0.0.0.0 -p 3002:3002 rlmsagent-view:1.0.0
-sudo docker run -d --name rlmsagent-view -e PORT=3002 -e HOSTNAME=0.0.0.0 -e SFTP_HOST=10.220.5.221 -e SFTP_USER=cdotims -e SFTP_PRIVATE_KEY="$(cat /usr/bin/id_rsa)" -e SFTP_REMOTE_PATH=/home/cdotims/rlmsagent_log/user-data.xml -e XML_TTL_MS=10000 -p 3002:3002 rlmsagent-view:1.0.0
-
+sudo docker tag image-d rlmsagent_view:1.0.0
+sudo docker run --rm -e PORT=3002 -e HOSTNAME=0.0.0.0 -p 3002:3002 rlmsagent_view:1.0.0
+sudo docker run -d --name rlmsagent_view -e PORT=3002 -e HOSTNAME=0.0.0.0 -e
+SFTP_HOST=10.220.5.221 -e SFTP_USER=cdotims -e SFTP_PRIVATE_KEY="$(cat
+/usr/bin/id_rsa)" -e SFTP_REMOTE_PATH=/home/cdotims/rlmsagent_log/user-data.xml
+-e XML_TTL_MS=10000 -p 3002:3002 rlmsagent_view:1.0.0
 
 
