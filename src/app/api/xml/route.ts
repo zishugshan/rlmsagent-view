@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import SftpClient from 'ssh2-sftp-client';
-import fs from 'node:fs';
-
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 const HOST = process.env.SFTP_HOST!;
 const PORT = Number(process.env.SFTP_PORT || '22');
@@ -11,18 +8,13 @@ const USER = process.env.SFTP_USER!;
 const PASSWORD = process.env.SFTP_PASSWORD; // optional if using key
 const REMOTE = process.env.SFTP_REMOTE_PATH || '/home/cdotims/rlmsagent_log/user-data.xml';
 
-// Key can come in any of these:
-const KEY_PATH = process.env.SFTP_PRIVATE_KEY_PATH; // e.g. /run/secrets/id_rsa
-const KEY_B64  = process.env.SFTP_PRIVATE_KEY_B64;  // base64 of PEM
+// base64 of PEM
 const KEY_RAW  = process.env.SFTP_PRIVATE_KEY;      // raw PEM text
-const PASSPHRASE = process.env.SFTP_PASSPHRASE;
 
 let cached = { at: 0, data: '' };
 const TTL_MS = Number(process.env.XML_TTL_MS || '10000'); // 10s
 
 function resolvePrivateKey(): Buffer | string | undefined {
-  if (KEY_PATH && fs.existsSync(KEY_PATH)) return fs.readFileSync(KEY_PATH);
-  if (KEY_B64) return Buffer.from(KEY_B64, 'base64');
   if (KEY_RAW) return KEY_RAW;
   return undefined;
 }
@@ -63,9 +55,6 @@ export async function GET(req: Request) {
     const privateKey = resolvePrivateKey();
     if (privateKey) {
       connectOpts.privateKey = privateKey;
-      if (PASSPHRASE) connectOpts.passphrase = PASSPHRASE;
-    } else if (PASSWORD) {
-      connectOpts.password = PASSWORD;
     }
 
     await sftp.connect(connectOpts);
