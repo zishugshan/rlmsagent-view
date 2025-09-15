@@ -90,49 +90,80 @@ const AttrPill: React.FC<{ k: string; v: string }> = ({ k, v }) => (
   </span>
 );
 
-const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }>= ({ node, depth = 0 }) => {
-  const [open, setOpen] = useState(depth < 1); // expand first level by default
+const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }> = ({ node, depth = 0 }) => {
+  const [open, setOpen] = useState(depth < 1);
   const hasChildren = node.children && node.children.length > 0;
   const grouped = useGrouped(node.children || []);
   const hasAttrs = node.attributes && Object.keys(node.attributes).length > 0;
 
+  // --- custom summary for rlmsreginfo --------------------------------------
+  const isRlmsReginfo = node.name.toLowerCase() === 'rlmsreginfo';
+  const privateIdText =
+    node.children?.find(c => c.name.toLowerCase() === 'privateid')?.text ?? null;
+
+  const attrsPills = hasAttrs ? (
+    <span className="ml-2">
+      {Object.entries(node.attributes!).map(([k, v]) => (
+        <span
+          key={k}
+          className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 mr-1"
+        >
+          @{k}=&quot;{v}&quot;
+        </span>
+      ))}
+    </span>
+  ) : null;
+
+  const defaultLabel = (
+    <span>
+      <span className="text-gray-800">{node.name}</span>
+      {hasChildren ? (
+        <span className="text-gray-400"> {'{'}{'}'} </span>
+      ) : node.text ? (
+        <span className="text-blue-700">: {'"'}{node.text}{'"'}</span>
+      ) : (
+        <span className="text-gray-400">: null</span>
+      )}
+      {attrsPills}
+    </span>
+  );
+
+  // If rlmsreginfo and we have a PrivateID child, render: rlmsreginfo {PrivateID: "..." }
+  const specialLabel =
+    isRlmsReginfo && privateIdText ? (
+      <span>
+        <span className="text-gray-800">{node.name}</span>{' '}
+        <span className="text-gray-400">{'{'}</span>
+        <span className="text-blue-700">{'"'}{privateIdText}{'"'}</span>
+        <span className="text-gray-400">{'}'}</span>
+        {attrsPills}
+      </span>
+    ) : null;
+
   return (
     <div>
       <NodeRow
-        label={
-          <span>
-            <span className="text-gray-800">{node.name}</span>
-            {hasChildren ? (
-              <span className="text-gray-400"> {"{"}{"}"}</span>
-            ) : node.text ? (
-              <span className="text-blue-700">: {'"'}{node.text}{'"'}</span>
-            ) : (
-              <span className="text-gray-400">: null</span>
-            )}
-            {hasAttrs && (
-              <span className="ml-2">{Object.entries(node.attributes!).map(([k,v]) => <AttrPill key={k} k={k} v={v} />)}</span>
-            )}
-          </span>
-        }
+        label={specialLabel ?? defaultLabel}
         depth={depth}
         open={open}
         setOpen={setOpen}
         showChevron={hasChildren}
       />
-
       {open && hasChildren && (
         <div>
-          {grouped.map(([tag, items]) => {
-            if (items.length > 1) {
-              return <ArrayGroup key={tag} tag={tag} items={items} depth={depth + 1} />;
-            }
-            return <XmlTreeNode key={tag + Math.random()} node={items[0]} depth={depth + 1} />;
-          })}
+          {grouped.map(([tag, items]) =>
+            items.length > 1 ? (
+              <ArrayGroup key={tag} tag={tag} items={items} depth={depth + 1} />
+            ) : (
+              <XmlTreeNode key={tag + Math.random()} node={items[0]} depth={depth + 1} />
+            )
+          )}
         </div>
       )}
     </div>
   );
 };
+
 
 const ArrayGroup: React.FC<{ tag: string; items: XmlNode[]; depth: number }> = ({ tag, items, depth }) => {
   const [open, setOpen] = useState(false);
