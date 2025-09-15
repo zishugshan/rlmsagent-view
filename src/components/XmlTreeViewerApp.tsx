@@ -92,22 +92,21 @@ const AttrPill: React.FC<{ k: string; v: string }> = ({ k, v }) => (
 
 const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }> = ({ node, depth = 0 }) => {
   const [open, setOpen] = useState(depth < 1);
-  const hasChildren = node.children && node.children.length > 0;
+  const hasChildren = !!(node.children && node.children.length);
   const grouped = useGrouped(node.children || []);
   const hasAttrs = node.attributes && Object.keys(node.attributes).length > 0;
 
-  // --- custom summary for rlmsreginfo --------------------------------------
   const isRlmsReginfo = node.name.toLowerCase() === 'rlmsreginfo';
   const privateIdText =
     node.children?.find(c => c.name.toLowerCase() === 'privateid')?.text ?? null;
 
+  // take only the part before '@' (fallback to full text if no '@')
+  const displayId = privateIdText ? privateIdText.split('@')[0] : null;
+
   const attrsPills = hasAttrs ? (
     <span className="ml-2">
       {Object.entries(node.attributes!).map(([k, v]) => (
-        <span
-          key={k}
-          className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 mr-1"
-        >
+        <span key={k} className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 mr-1">
           @{k}=&quot;{v}&quot;
         </span>
       ))}
@@ -128,13 +127,13 @@ const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }> = ({ node, depth 
     </span>
   );
 
-  // If rlmsreginfo and we have a PrivateID child, render: rlmsreginfo {PrivateID: "..." }
+  // rlmsreginfo {PrivateID: "404345130000011"}
   const specialLabel =
-    isRlmsReginfo && privateIdText ? (
+    isRlmsReginfo && displayId ? (
       <span>
         <span className="text-gray-800">{node.name}</span>{' '}
         <span className="text-gray-400">{'{'}</span>
-        <span className="text-blue-700">{'"'}{privateIdText}{'"'}</span>
+        <span className="text-blue-700">{'"'}{displayId}{'"'}</span>
         <span className="text-gray-400">{'}'}</span>
         {attrsPills}
       </span>
@@ -152,11 +151,9 @@ const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }> = ({ node, depth 
       {open && hasChildren && (
         <div>
           {grouped.map(([tag, items]) =>
-            items.length > 1 ? (
-              <ArrayGroup key={tag} tag={tag} items={items} depth={depth + 1} />
-            ) : (
-              <XmlTreeNode key={tag + Math.random()} node={items[0]} depth={depth + 1} />
-            )
+            items.length > 1
+              ? <ArrayGroup key={tag} tag={tag} items={items} depth={depth + 1} />
+              : <XmlTreeNode key={tag + Math.random()} node={items[0]} depth={depth + 1} />
           )}
         </div>
       )}
