@@ -133,7 +133,7 @@ const XmlTreeNode: React.FC<{ node: XmlNode; depth?: number }> = ({ node, depth 
       <span>
         <span className="text-gray-800">{node.name}</span>{' '}
         <span className="text-gray-400">{'{'}</span>
-        <span className="text-blue-700">{'"'}{displayId}{'"'}</span>
+        <span className="text-blue-700">{displayId}</span>
         <span className="text-gray-400">{'}'}</span>
         {attrsPills}
       </span>
