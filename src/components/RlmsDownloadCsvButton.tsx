@@ -1,4 +1,3 @@
-'use client';
 import React from 'react';
 import { buildCsvFromXml } from '@/utils/rlms-csv';
 

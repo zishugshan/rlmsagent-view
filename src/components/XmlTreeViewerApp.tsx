@@ -234,11 +234,10 @@ export default function XmlTreeViewerApp() {
   return (
     <div className="w-full h-full bg-gray-100 text-gray-900">
 
-      <div className="flex items-center justify-between bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">
+      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">
         <span>XML Tree</span>
         <RlmsDownloadCsvButton xml={xmlRaw} />
       </div>
-      <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">XML Tree</div>
 
       <div className="p-2">
         {!xmlTree && <div className="m-4 text-gray-600">Loading XML…</div>}
