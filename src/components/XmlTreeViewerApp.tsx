@@ -1,5 +1,6 @@
 'use client'
 import React, { useMemo, useState, useEffect} from "react";
+import RlmsDownloadCsvButton from '@/components/RlmsDownloadCsvButton';
 
 // ---- Tiny XML → JS tree helpers -------------------------------------------
 
@@ -190,6 +191,7 @@ const COUNT_URL = '/api/rlmsreginfo-count';
 
 export default function XmlTreeViewerApp() {
   const [xmlTree, setXmlTree] = useState<XmlNode | { error: string } | null>(null);
+  const [xmlRaw, setXmlRaw] = useState<string | null>(null);
   const [reginfoCount, setReginfoCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -203,7 +205,10 @@ export default function XmlTreeViewerApp() {
         const res = await fetch(XML_URL, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         xml = await res.text();
-        if (!cancelled) setXmlTree(parseXmlToTree(xml));
+        if (!cancelled) {
+          setXmlTree(parseXmlToTree(xml));
+          setXmlRaw(xml);
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (!cancelled) setXmlTree({ error: `Failed to load XML: ${msg}` });
@@ -228,6 +233,11 @@ export default function XmlTreeViewerApp() {
 
   return (
     <div className="w-full h-full bg-gray-100 text-gray-900">
+
+      <div className="flex items-center justify-between bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">
+        <span>XML Tree</span>
+        <RlmsDownloadCsvButton xml={xmlRaw} />
+      </div>
       <div className="bg-teal-500 text-white px-4 py-3 font-semibold tracking-wide shadow">XML Tree</div>
 
       <div className="p-2">
